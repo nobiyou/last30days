@@ -19,6 +19,29 @@ _SOURCE_NAMES = (
 )
 
 
+def _load_last30days_payload(stdout: str, candidate: CandidateEvent) -> dict:
+    output = stdout or "{}"
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError as exc:
+        decoder = json.JSONDecoder()
+        for index, char in enumerate(output):
+            if char != "{":
+                continue
+            try:
+                payload, _ = decoder.raw_decode(output[index:])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, dict):
+                return payload
+
+        preview = output[:200].replace("\n", "\\n")
+        raise RuntimeError(
+            f"last30days_invalid_json event_id={candidate.event_id} "
+            f"query={candidate.query} preview={preview}"
+        ) from exc
+
+
 def run_last30days(last30days_root: Path, candidate: CandidateEvent) -> list[ResearchFinding]:
     script = Path(last30days_root) / "scripts" / "last30days.py"
     command = [
@@ -44,7 +67,7 @@ def run_last30days(last30days_root: Path, candidate: CandidateEvent) -> list[Res
             f"last30days_failed event_id={candidate.event_id} query={candidate.query} details={details}"
         ) from exc
 
-    payload = json.loads(result.stdout or "{}")
+    payload = _load_last30days_payload(result.stdout, candidate)
     findings: list[ResearchFinding] = []
 
     for source_name in _SOURCE_NAMES:

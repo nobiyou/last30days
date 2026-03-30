@@ -133,6 +133,45 @@ def test_run_last30days_requests_utf8_decoding(monkeypatch, tmp_path: Path):
     assert seen["encoding"] == "utf-8"
 
 
+def test_run_last30days_extracts_json_from_mixed_stdout(monkeypatch, tmp_path: Path):
+    candidate = CandidateEvent(
+        event_id="langgraph-update",
+        query="LangGraph update",
+        title="LangGraph update",
+        source="watchlist",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["Agents"],
+    )
+    payload = {
+        "reddit": [
+            {
+                "title": "LangGraph discussion",
+                "url": "https://example.com/reddit",
+                "score": 51,
+                "date": "2026-03-30T08:00:00Z",
+                "summary": "reddit summary",
+            }
+        ]
+    }
+
+    def fake_run(*args, **kwargs):
+        class Result:
+            stdout = (
+                "[REDDIT WARNING] No output text found in OpenAI response.\n"
+                + json.dumps(payload)
+                + "\n\n### WEBSEARCH REQUIRED ###\n"
+            )
+
+        return Result()
+
+    monkeypatch.setattr("ai_news_site.research_client.subprocess.run", fake_run)
+
+    findings = run_last30days(tmp_path, candidate)
+
+    assert len(findings) == 1
+    assert findings[0].title == "LangGraph discussion"
+
+
 def test_run_last30days_surfaces_subprocess_stderr(monkeypatch, tmp_path: Path):
     candidate = CandidateEvent(
         event_id="figure-robotics",
