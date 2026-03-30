@@ -11,12 +11,13 @@ def _slugify(value: str) -> str:
 def build_candidates(watchlist_path: Path, hn_titles: list[dict]) -> list[CandidateEvent]:
     watchlist = json.loads(Path(watchlist_path).read_text(encoding="utf-8"))
     seen_queries: set[str] = set()
-    results: list[CandidateEvent] = []
+    watchlist_candidates: list[CandidateEvent] = []
+    hn_candidates: list[CandidateEvent] = []
 
     for item in watchlist:
         query = item["query"]
         seen_queries.add(query.lower())
-        results.append(
+        watchlist_candidates.append(
             CandidateEvent(
                 event_id=_slugify(f"watch-{query}"),
                 query=query,
@@ -32,7 +33,7 @@ def build_candidates(watchlist_path: Path, hn_titles: list[dict]) -> list[Candid
         lowered = title.lower()
         if any(query in lowered for query in seen_queries):
             continue
-        results.append(
+        hn_candidates.append(
             CandidateEvent(
                 event_id=_slugify(f"hn-{title}"),
                 query=title,
@@ -43,4 +44,5 @@ def build_candidates(watchlist_path: Path, hn_titles: list[dict]) -> list[Candid
             )
         )
 
-    return results
+    hn_candidates = sorted(hn_candidates, key=lambda item: item.occurred_at, reverse=True)
+    return [*watchlist_candidates, *hn_candidates]
