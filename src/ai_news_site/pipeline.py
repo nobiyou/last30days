@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timezone
+from urllib.request import Request, urlopen
 
 from .config import SiteConfig
 from .discovery import build_candidates
@@ -8,9 +10,47 @@ from .publish_gate import should_publish
 from .published_store import PublishedStore
 from .site_builder import build_site
 
+HN_TOPSTORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
+HN_ITEM_URL_TEMPLATE = "https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
+
+
+def _load_json(url: str):
+    request = Request(url, headers={"User-Agent": "ai-news-site/0.1"})
+    with urlopen(request, timeout=5) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_hackernews_titles(limit: int = 5) -> list[dict]:
+    try:
+        top_story_ids = _load_json(HN_TOPSTORIES_URL)
+    except Exception:
+        return []
+
+    titles: list[dict] = []
+    for story_id in top_story_ids[:limit]:
+        try:
+            item = _load_json(HN_ITEM_URL_TEMPLATE.format(story_id=story_id))
+        except Exception:
+            continue
+
+        title = item.get("title")
+        published_at = item.get("time")
+        if not title or published_at is None:
+            continue
+
+        titles.append(
+            {
+                "title": title,
+                "published_at": datetime.fromtimestamp(published_at, timezone.utc)
+                .isoformat()
+                .replace("+00:00", "Z"),
+            }
+        )
+    return titles
+
 
 def discover_candidates(config: SiteConfig):
-    return build_candidates(config.watchlist_path, [])
+    return build_candidates(config.watchlist_path, fetch_hackernews_titles())
 
 
 def research_candidate(config: SiteConfig, candidate):
@@ -35,14 +75,17 @@ def publish_once(config: SiteConfig) -> dict:
     published_count = 0
 
     for candidate in discover_candidates(config)[: config.max_cards_per_run]:
-        findings = _coerce_findings(research_candidate(config, candidate))
-        decision = should_publish(candidate, findings)
-        if not decision.publish or store.has_card(candidate.event_id):
-            continue
+        try:
+            findings = _coerce_findings(research_candidate(config, candidate))
+            decision = should_publish(candidate, findings)
+            if not decision.publish or store.has_card(candidate.event_id):
+                continue
 
-        card = build_card(candidate, findings, datetime.now(timezone.utc).isoformat())
-        store.upsert_card(card)
-        published_count += 1
+            card = build_card(candidate, findings, datetime.now(timezone.utc).isoformat())
+            store.upsert_card(card)
+            published_count += 1
+        except Exception:
+            continue
 
     cards = store.list_latest(limit=100)
     build_site(config.output_dir, config.site_name, cards)
