@@ -1,5 +1,9 @@
 __pycache__/
 .pytest_cache/
 .venv/
+.superpowers/
+.vscode/
+build/
 dist/
 site_state/
+*.egg-info/
