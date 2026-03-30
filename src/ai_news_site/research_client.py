@@ -5,6 +5,19 @@ from pathlib import Path
 
 from .models import CandidateEvent, ResearchFinding
 
+_SOURCE_NAMES = (
+    "reddit",
+    "x",
+    "web",
+    "youtube",
+    "tiktok",
+    "instagram",
+    "hackernews",
+    "bluesky",
+    "truthsocial",
+    "polymarket",
+)
+
 
 def run_last30days(last30days_root: Path, candidate: CandidateEvent) -> list[ResearchFinding]:
     script = Path(last30days_root) / "scripts" / "last30days.py"
@@ -25,7 +38,7 @@ def run_last30days(last30days_root: Path, candidate: CandidateEvent) -> list[Res
     payload = json.loads(result.stdout or "{}")
     findings: list[ResearchFinding] = []
 
-    for source_name in ("reddit", "x", "youtube", "hackernews", "web"):
+    for source_name in _SOURCE_NAMES:
         for item in payload.get(source_name, []):
             findings.append(
                 ResearchFinding(
