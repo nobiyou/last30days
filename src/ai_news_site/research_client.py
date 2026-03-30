@@ -32,6 +32,7 @@ def run_last30days(last30days_root: Path, candidate: CandidateEvent) -> list[Res
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         check=True,
     )
 

@@ -102,3 +102,30 @@ def test_run_last30days_parses_new_upstream_sources(monkeypatch, tmp_path: Path)
 
     assert {item.source for item in findings} >= {"reddit", "tiktok", "instagram", "bluesky"}
     assert any(item.title == "OpenManus demo on TikTok" for item in findings)
+
+
+def test_run_last30days_requests_utf8_decoding(monkeypatch, tmp_path: Path):
+    candidate = CandidateEvent(
+        event_id="langgraph-update",
+        query="LangGraph update",
+        title="LangGraph update",
+        source="watchlist",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["Agents"],
+    )
+    seen = {}
+
+    def fake_run(*args, **kwargs):
+        seen.update(kwargs)
+
+        class Result:
+            stdout = json.dumps({"reddit": []}, ensure_ascii=False)
+
+        return Result()
+
+    monkeypatch.setattr("ai_news_site.research_client.subprocess.run", fake_run)
+
+    run_last30days(tmp_path, candidate)
+
+    assert seen["text"] is True
+    assert seen["encoding"] == "utf-8"
