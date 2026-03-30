@@ -43,6 +43,60 @@ def test_should_publish_when_multiple_sources_confirm_same_event():
     assert decision.reason == "multi_source_confirmation"
 
 
+def test_should_publish_when_hackernews_has_strong_single_source_breakout():
+    candidate = CandidateEvent(
+        event_id="hn-agent-postmortem",
+        query="Agent postmortem",
+        title="Agent postmortem",
+        source="hackernews",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["Agents"],
+    )
+
+    findings = [
+        ResearchFinding(
+            "hackernews",
+            "Agent postmortem gets traction",
+            "https://news.ycombinator.com/item?id=1",
+            85,
+            "2026-03-30T10:00:00Z",
+            "HN story",
+        )
+    ]
+
+    decision = should_publish(candidate, findings)
+
+    assert decision.publish is True
+    assert decision.reason == "trusted_hackernews_breakout"
+
+
+def test_should_not_publish_generic_single_source_reddit_breakout_below_global_threshold():
+    candidate = CandidateEvent(
+        event_id="reddit-agent-post",
+        query="Agent post",
+        title="Agent post",
+        source="watchlist",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["Agents"],
+    )
+
+    findings = [
+        ResearchFinding(
+            "reddit",
+            "Agent post gets traction",
+            "https://reddit.com/r/test/1",
+            85,
+            "2026-03-30T10:00:00Z",
+            "Reddit thread",
+        )
+    ]
+
+    decision = should_publish(candidate, findings)
+
+    assert decision.publish is False
+    assert decision.reason == "insufficient_signal"
+
+
 def test_run_last30days_parses_new_upstream_sources(monkeypatch, tmp_path: Path):
     candidate = CandidateEvent(
         event_id="openmanus-release",
