@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
 
@@ -14,6 +15,10 @@ HN_TOPSTORIES_URL = "https://hacker-news.firebaseio.com/v0/topstories.json"
 HN_ITEM_URL_TEMPLATE = "https://hacker-news.firebaseio.com/v0/item/{story_id}.json"
 
 
+def _log_pipeline(message: str) -> None:
+    print(f"[Pipeline] {message}", file=sys.stderr)
+
+
 def _load_json(url: str):
     request = Request(url, headers={"User-Agent": "ai-news-site/0.1"})
     with urlopen(request, timeout=5) as response:
@@ -23,7 +28,8 @@ def _load_json(url: str):
 def fetch_hackernews_titles(limit: int = 5) -> list[dict]:
     try:
         top_story_ids = _load_json(HN_TOPSTORIES_URL)
-    except Exception:
+    except Exception as exc:
+        _log_pipeline(f"hn_fetch_failed error={exc}")
         return []
 
     titles: list[dict] = []
@@ -84,9 +90,13 @@ def publish_once(config: SiteConfig) -> dict:
             card = build_card(candidate, findings, datetime.now(timezone.utc).isoformat())
             store.upsert_card(card)
             published_count += 1
-        except Exception:
+        except Exception as exc:
+            _log_pipeline(f"candidate_failed event_id={candidate.event_id} error={exc}")
             continue
 
     cards = store.list_latest(limit=100)
     build_site(config.output_dir, config.site_name, cards)
+    _log_pipeline(
+        f"published_count={published_count} rendered_count={len(cards)} output_dir={config.output_dir}"
+    )
     return {"published_count": published_count, "output_dir": str(config.output_dir)}

@@ -29,13 +29,26 @@ jobs:
         run: git clone --depth 1 https://github.com/mvanhorn/last30days-skill.git "$RUNNER_TEMP/last30days"
       - name: Run publisher
         run: LAST30DAYS_ROOT="$RUNNER_TEMP/last30days" python -m ai_news_site.cli publish-once
+      - name: Inspect publish output
+        run: |
+          echo "== dist files =="
+          find dist -maxdepth 3 -type f | sort || true
+          echo "== published card count =="
+          python -c "import pathlib, sqlite3; db=pathlib.Path('site_state/published.db'); print(sqlite3.connect(db).execute('select count(*) from published_cards').fetchone()[0] if db.exists() else 'missing-db')"
+          echo "== dist/index.html preview =="
+          python -c "from pathlib import Path; p=Path('dist/index.html'); print('\\n'.join(p.read_text(encoding='utf-8').splitlines()[:40]) if p.exists() else 'missing dist/index.html')"
+      - name: Prepare deploy bundle
+        run: |
+          mkdir -p "$RUNNER_TEMP/pages"
+          cp -R dist/. "$RUNNER_TEMP/pages/"
       - name: Deploy to Pages branch
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git checkout --orphan gh-pages
-          git rm -rf .
-          cp -R dist/. .
+          git rm -rf . || true
+          git clean -fdx
+          cp -R "$RUNNER_TEMP/pages"/. .
           git add .
           git commit -m "publish latest site"
           git push origin HEAD:gh-pages --force

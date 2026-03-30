@@ -88,7 +88,7 @@ def test_publish_once_builds_site_from_discovered_candidates(monkeypatch, tmp_pa
     assert (tmp_path / "dist" / "index.html").exists()
 
 
-def test_publish_once_skips_failed_candidate_and_continues(monkeypatch, tmp_path: Path):
+def test_publish_once_skips_failed_candidate_and_continues(monkeypatch, tmp_path: Path, capsys):
     config = SiteConfig(
         site_name="Signal Radar",
         base_url="https://example.com",
@@ -137,10 +137,13 @@ def test_publish_once_skips_failed_candidate_and_continues(monkeypatch, tmp_path
     monkeypatch.setattr("ai_news_site.pipeline.research_candidate", fake_research)
 
     result = pipeline.publish_once(config)
+    captured = capsys.readouterr()
 
     assert result["published_count"] == 1
     assert (tmp_path / "dist" / "index.html").exists()
     assert "robotics-launch" in (tmp_path / "dist" / "index.html").read_text(encoding="utf-8")
+    assert "openmanus-release" in captured.err
+    assert "research failed" in captured.err
 
 
 def test_cli_publish_once_invokes_pipeline(monkeypatch):
