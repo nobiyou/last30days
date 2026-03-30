@@ -1,0 +1,42 @@
+name: publish-ai-news-site
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      AI_NEWS_SITE_NAME: Signal Radar
+      AI_NEWS_BASE_URL: https://example.github.io/ai-news-site
+      AI_NEWS_OUTPUT_DIR: dist
+      AI_NEWS_STATE_DB: site_state/published.db
+      AI_NEWS_WATCHLIST_PATH: config/watchlists/topics.json
+      LAST30DAYS_ROOT: ${{ runner.temp }}/last30days
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Checkout last30days
+        run: git clone --depth 1 https://github.com/mvanhorn/last30days-skill.git "$RUNNER_TEMP/last30days"
+      - name: Run publisher
+        run: python -m ai_news_site.cli publish-once
+      - name: Deploy to Pages branch
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout --orphan gh-pages
+          git rm -rf .
+          cp -R dist/. .
+          git add .
+          git commit -m "publish latest site"
+          git push origin HEAD:gh-pages --force

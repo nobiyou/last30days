@@ -1,5 +1,8 @@
 import argparse
 
+from .config import load_config
+from .pipeline import publish_once
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="ai-news-site")
@@ -14,6 +17,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command is None:
         parser.print_help()
         return 1
+    if args.command == "publish-once":
+        publish_once(load_config())
     return 0
 
 
