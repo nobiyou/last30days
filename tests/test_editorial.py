@@ -47,3 +47,38 @@ def test_build_card_generates_short_publishable_news_card():
     assert card.source_links == ["https://b", "https://a"]
     assert card.confidence_score == 0.91
     assert card.published_at == "2026-03-30T10:30:00Z"
+
+
+def test_build_card_bounds_summary_length_for_long_findings():
+    candidate = CandidateEvent(
+        event_id="robotics-launch",
+        query="robotics launch",
+        title="Robotics launch",
+        source="watchlist",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["Robotics"],
+    )
+    findings = [
+        ResearchFinding(
+            "reddit",
+            "Robotics launch",
+            "https://a",
+            88,
+            "2026-03-30T10:00:00Z",
+            "A" * 180,
+        ),
+        ResearchFinding(
+            "x",
+            "Robotics launch",
+            "https://b",
+            91,
+            "2026-03-30T10:05:00Z",
+            "B" * 180,
+        ),
+    ]
+
+    card = build_card(candidate, findings, "2026-03-30T10:30:00Z")
+
+    assert len(card.summary) <= 160
+    assert not card.summary.endswith("；")
+    assert "社区讨论集中在这次更新是否会改变近期采用节奏。" in card.summary
