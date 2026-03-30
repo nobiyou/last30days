@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<article class="card detail-card">
+  <div class="card-topline">
+    <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+    <span class="score">{{ "%.2f"|format(card.confidence_score) }}</span>
+  </div>
+  <h1>{{ card.title }}</h1>
+  <p class="summary">{{ card.summary }}</p>
+  <div class="detail-grid">
+    <section>
+      <h2>为什么重要</h2>
+      <p>{{ card.why_it_matters }}</p>
+    </section>
+    <section>
+      <h2>谁应该关注</h2>
+      <p>{{ card.who_should_care }}</p>
+    </section>
+  </div>
+  <section>
+    <h2>主题标签</h2>
+    <div class="tag-row">
+      {% for tag in card.topic_tags %}
+      <span class="pill">{{ tag }}</span>
+      {% endfor %}
+    </div>
+  </section>
+  <section>
+    <h2>来源信号</h2>
+    <ul class="source-list">
+      {% for url in card.source_links %}
+      <li><a href="{{ url }}" target="_blank" rel="noreferrer">{{ url }}</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+</article>
+{% endblock %}

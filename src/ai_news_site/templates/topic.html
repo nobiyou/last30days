@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero card">
+  <p class="eyebrow">Topic Hub</p>
+  <h1>{{ topic_name }}</h1>
+  <p class="lede">持续沉淀与该主题相关的最新快讯，方便横向追踪和后续深挖。</p>
+  <div class="meta-row">
+    <span>{{ latest_count }} 条内容</span>
+    <span>自动归档</span>
+  </div>
+</section>
+
+<section class="stack">
+  {% for card in cards %}
+  <article class="card news-card">
+    <div class="card-topline">
+      <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+      <span class="score">{{ "%.2f"|format(card.confidence_score) }}</span>
+    </div>
+    <h2><a href="{{ news_href_prefix }}news/{{ card.slug }}.html">{{ card.title }}</a></h2>
+    <p class="summary">{{ card.summary }}</p>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

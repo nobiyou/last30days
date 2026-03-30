@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero card">
+  <p class="eyebrow">滚动快讯流</p>
+  <h1>AI 资讯信号站</h1>
+  <p class="lede">
+    每一次发布都围绕 AI、机器人、智能体和开源展开，面向独立开发者、创业团队和投资人。
+  </p>
+  <div class="meta-row">
+    <span>{{ latest_count }} 条最新快讯</span>
+    <span>自动发布</span>
+    <span>Topic Hub 归档</span>
+  </div>
+</section>
+
+<section class="stack">
+  {% for card in cards %}
+  <article class="card news-card">
+    <div class="card-topline">
+      <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+      <span class="score">{{ "%.2f"|format(card.confidence_score) }}</span>
+    </div>
+    <h2><a href="{{ news_href_prefix }}news/{{ card.slug }}.html">{{ card.title }}</a></h2>
+    <p class="summary">{{ card.summary }}</p>
+    <div class="card-footer">
+      <span>{{ card.published_at }}</span>
+      <span>{{ card.who_should_care }}</span>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}
