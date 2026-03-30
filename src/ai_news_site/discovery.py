@@ -3,9 +3,40 @@ from pathlib import Path
 
 from .models import CandidateEvent
 
+_HN_TOPIC_KEYWORDS = {
+    "Agents": ("agent", "agents", "agentic", "workflow", "langgraph", "openmanus", "copilot"),
+    "Robotics": ("robot", "robotics", "warehouse", "humanoid", "figure"),
+    "Open Source": ("open source", "open-source", "github", "repo", "repository", "release"),
+    "AI": (
+        "ai",
+        "llm",
+        "chatgpt",
+        "gpt",
+        "claude",
+        "gemini",
+        "openai",
+        "model",
+        "diffusion",
+        "reinforcement learning",
+    ),
+}
+
 
 def _slugify(value: str) -> str:
     return "".join(ch.lower() if ch.isalnum() else "-" for ch in value).strip("-")
+
+
+def _infer_hn_tags(title: str) -> list[str]:
+    lowered = title.lower()
+    tags = [
+        tag for tag, keywords in _HN_TOPIC_KEYWORDS.items() if any(keyword in lowered for keyword in keywords)
+    ]
+    return tags or ["AI"]
+
+
+def _is_relevant_hn_title(title: str) -> bool:
+    lowered = title.lower()
+    return any(keyword in lowered for keywords in _HN_TOPIC_KEYWORDS.values() for keyword in keywords)
 
 
 def build_candidates(watchlist_path: Path, hn_titles: list[dict]) -> list[CandidateEvent]:
@@ -33,6 +64,8 @@ def build_candidates(watchlist_path: Path, hn_titles: list[dict]) -> list[Candid
         lowered = title.lower()
         if any(query in lowered for query in seen_queries):
             continue
+        if not _is_relevant_hn_title(title):
+            continue
         hn_candidates.append(
             CandidateEvent(
                 event_id=_slugify(f"hn-{title}"),
@@ -40,7 +73,7 @@ def build_candidates(watchlist_path: Path, hn_titles: list[dict]) -> list[Candid
                 title=title,
                 source="hackernews",
                 occurred_at=item["published_at"],
-                tags=["AI"],
+                tags=_infer_hn_tags(title),
             )
         )
 

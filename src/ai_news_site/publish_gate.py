@@ -18,9 +18,12 @@ def should_publish(candidate: CandidateEvent, findings: list[ResearchFinding]) -
     title_lower = candidate.title.lower()
     structural_keywords = ("release", "funding", "launch", "version", "issue", "paper")
     hackernews_only = sources == {"hackernews"}
+    watchlist_hn_signal = candidate.source == "watchlist" and hackernews_only and max_score >= 60
 
     if len(sources) >= 2:
         return PublishDecision(True, "multi_source_confirmation")
+    if watchlist_hn_signal:
+        return PublishDecision(True, "watchlist_hackernews_signal")
     if hackernews_only and max_score >= 84:
         return PublishDecision(True, "trusted_hackernews_breakout")
     if max_score >= 90:

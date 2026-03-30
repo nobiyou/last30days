@@ -70,6 +70,60 @@ def test_should_publish_when_hackernews_has_strong_single_source_breakout():
     assert decision.reason == "trusted_hackernews_breakout"
 
 
+def test_should_publish_watchlist_topic_when_hackernews_signal_is_strong_enough():
+    candidate = CandidateEvent(
+        event_id="watch-langgraph",
+        query="LangGraph",
+        title="LangGraph",
+        source="watchlist",
+        occurred_at="scheduled",
+        tags=["Agents"],
+    )
+
+    findings = [
+        ResearchFinding(
+            "hackernews",
+            "LangGraph post picks up signal",
+            "https://news.ycombinator.com/item?id=2",
+            68,
+            "2026-03-30T10:00:00Z",
+            "HN story",
+        )
+    ]
+
+    decision = should_publish(candidate, findings)
+
+    assert decision.publish is True
+    assert decision.reason == "watchlist_hackernews_signal"
+
+
+def test_should_not_publish_generic_hackernews_signal_below_hn_breakout_threshold():
+    candidate = CandidateEvent(
+        event_id="hn-generic-post",
+        query="Generic post",
+        title="Generic post",
+        source="hackernews",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["AI"],
+    )
+
+    findings = [
+        ResearchFinding(
+            "hackernews",
+            "Generic post gets some traction",
+            "https://news.ycombinator.com/item?id=3",
+            68,
+            "2026-03-30T10:00:00Z",
+            "HN story",
+        )
+    ]
+
+    decision = should_publish(candidate, findings)
+
+    assert decision.publish is False
+    assert decision.reason == "insufficient_signal"
+
+
 def test_should_not_publish_generic_single_source_reddit_breakout_below_global_threshold():
     candidate = CandidateEvent(
         event_id="reddit-agent-post",
