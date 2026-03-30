@@ -16,7 +16,6 @@ jobs:
       AI_NEWS_OUTPUT_DIR: dist
       AI_NEWS_STATE_DB: site_state/published.db
       AI_NEWS_WATCHLIST_PATH: config/watchlists/topics.json
-      LAST30DAYS_ROOT: ${{ runner.temp }}/last30days
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -29,7 +28,7 @@ jobs:
       - name: Checkout last30days
         run: git clone --depth 1 https://github.com/mvanhorn/last30days-skill.git "$RUNNER_TEMP/last30days"
       - name: Run publisher
-        run: python -m ai_news_site.cli publish-once
+        run: LAST30DAYS_ROOT="$RUNNER_TEMP/last30days" python -m ai_news_site.cli publish-once
       - name: Deploy to Pages branch
         run: |
           git config user.name github-actions
