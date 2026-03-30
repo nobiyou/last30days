@@ -25,7 +25,9 @@ class ResearchFinding:
 class NewsCard:
     canonical_event_id: str
     title: str
+    event_type: str
     summary: str
+    key_signal: str
     why_it_matters: str
     who_should_care: str
     topic_tags: list[str]

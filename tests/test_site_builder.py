@@ -8,7 +8,9 @@ def test_build_site_writes_homepage_detail_and_topic_pages(tmp_path: Path):
     card = NewsCard(
         canonical_event_id="openmanus-release",
         title="OpenManus release",
+        event_type="版本发布",
         summary="新版本引发了社区关注。",
+        key_signal="2 个来源、2 条证据，最高信号 0.90。",
         why_it_matters="Agent 工作流验证成本更低。",
         who_should_care="独立开发者",
         topic_tags=["Agents", "Open Source"],
@@ -28,6 +30,8 @@ def test_build_site_writes_homepage_detail_and_topic_pages(tmp_path: Path):
     assert "OpenManus release" in index_html
     assert "site.css" in index_html
     assert "OpenManus release" in detail_html
+    assert "版本发布" in detail_html
+    assert "2 个来源、2 条证据，最高信号 0.90。" in detail_html
     assert "Agent 工作流验证成本更低。" in detail_html
     assert "../site.css" in detail_html
     assert "Agents" in topic_html

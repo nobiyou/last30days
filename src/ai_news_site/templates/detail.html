@@ -2,12 +2,20 @@
 {% block content %}
 <article class="card detail-card">
   <div class="card-topline">
-    <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+    <div class="tag-row">
+      <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+      <span class="pill">{{ card.event_type }}</span>
+    </div>
     <span class="score">{{ "%.2f"|format(card.confidence_score) }}</span>
   </div>
   <h1>{{ card.title }}</h1>
   <p class="summary">{{ card.summary }}</p>
+  <p class="signal-note">{{ card.key_signal }}</p>
   <div class="detail-grid">
+    <section>
+      <h2>核心信号</h2>
+      <p>{{ card.key_signal }}</p>
+    </section>
     <section>
       <h2>为什么重要</h2>
       <p>{{ card.why_it_matters }}</p>
@@ -27,6 +35,7 @@
   </section>
   <section>
     <h2>来源信号</h2>
+    <p class="section-meta">共 {{ card.source_links|length }} 条来源证据</p>
     <ul class="source-list">
       {% for url in card.source_links %}
       <li><a href="{{ url }}" target="_blank" rel="noreferrer">{{ url }}</a></li>

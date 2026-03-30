@@ -17,14 +17,18 @@
   {% for card in cards %}
   <article class="card news-card">
     <div class="card-topline">
-      <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+      <div class="tag-row">
+        <span class="pill">{{ card.topic_tags[0] if card.topic_tags else "AI" }}</span>
+        <span class="pill">{{ card.event_type }}</span>
+      </div>
       <span class="score">{{ "%.2f"|format(card.confidence_score) }}</span>
     </div>
     <h2><a href="{{ news_href_prefix }}news/{{ card.slug }}.html">{{ card.title }}</a></h2>
     <p class="summary">{{ card.summary }}</p>
+    <p class="signal-note">{{ card.key_signal }}</p>
     <div class="card-footer">
       <span>{{ card.published_at }}</span>
-      <span>{{ card.who_should_care }}</span>
+      <span>{{ card.source_links|length }} 条证据</span>
     </div>
   </article>
   {% endfor %}

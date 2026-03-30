@@ -40,9 +40,11 @@ def test_build_card_generates_short_publishable_news_card():
     card = build_card(candidate, findings, "2026-03-30T10:30:00Z")
 
     assert card.title == "OpenManus release"
-    assert card.summary.startswith("Strong community response；Planner update")
-    assert card.why_it_matters == "这条信号说明相关工具或项目正在获得真实关注，值得尽快验证。"
-    assert card.who_should_care == "独立开发者、创业团队和投资人"
+    assert card.event_type == "版本发布"
+    assert card.summary.startswith("最近 7 天，OpenManus release")
+    assert "2 个来源" in card.key_signal
+    assert "开源" in card.why_it_matters
+    assert "开发者工具" in card.who_should_care
     assert card.topic_tags == ["Agents", "Open Source"]
     assert card.source_links == ["https://b", "https://a"]
     assert card.confidence_score == 0.91
@@ -81,4 +83,5 @@ def test_build_card_bounds_summary_length_for_long_findings():
 
     assert len(card.summary) <= 160
     assert not card.summary.endswith("；")
-    assert "社区讨论集中在这次更新是否会改变近期采用节奏。" in card.summary
+    assert "最近 7 天" in card.summary
+    assert "1 个来源" in card.key_signal or "2 个来源" in card.key_signal

@@ -138,6 +138,8 @@ h2 {
 
 .lede,
 .summary,
+.signal-note,
+.section-meta,
 .detail-grid p,
 .source-list {
   color: var(--muted);
@@ -191,6 +193,15 @@ h2 {
 .summary {
   font-size: 1.02rem;
   margin: 16px 0 0;
+}
+
+.signal-note,
+.section-meta {
+  font-size: 0.94rem;
+}
+
+.signal-note {
+  margin: 14px 0 0;
 }
 
 .card-footer {

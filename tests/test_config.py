@@ -23,7 +23,9 @@ def test_news_card_slug_is_stable():
     card = NewsCard(
         canonical_event_id="github-openmanus-release",
         title="OpenManus 发布新版本",
+        event_type="版本发布",
         summary="版本更新带来更好的任务规划。",
+        key_signal="2 个来源、2 条证据，最高信号 0.92。",
         why_it_matters="开发者可以更快验证 agent 工作流。",
         who_should_care="独立开发者",
         topic_tags=["Agents", "Open Source"],

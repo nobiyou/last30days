@@ -22,7 +22,9 @@ class PublishedStore:
                 CREATE TABLE IF NOT EXISTS published_cards (
                     canonical_event_id TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
                     summary TEXT NOT NULL,
+                    key_signal TEXT NOT NULL,
                     why_it_matters TEXT NOT NULL,
                     who_should_care TEXT NOT NULL,
                     topic_tags TEXT NOT NULL,
@@ -32,6 +34,17 @@ class PublishedStore:
                 )
                 """
             )
+            existing_columns = {
+                row["name"] for row in conn.execute("PRAGMA table_info(published_cards)").fetchall()
+            }
+            if "event_type" not in existing_columns:
+                conn.execute(
+                    "ALTER TABLE published_cards ADD COLUMN event_type TEXT NOT NULL DEFAULT '趋势信号'"
+                )
+            if "key_signal" not in existing_columns:
+                conn.execute(
+                    "ALTER TABLE published_cards ADD COLUMN key_signal TEXT NOT NULL DEFAULT ''"
+                )
 
     def has_card(self, canonical_event_id: str) -> bool:
         with self._connect() as conn:
@@ -46,13 +59,15 @@ class PublishedStore:
             conn.execute(
                 """
                 INSERT INTO published_cards (
-                    canonical_event_id, title, summary, why_it_matters,
+                    canonical_event_id, title, event_type, summary, key_signal, why_it_matters,
                     who_should_care, topic_tags, source_links,
                     confidence_score, published_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(canonical_event_id) DO UPDATE SET
                     title = excluded.title,
+                    event_type = excluded.event_type,
                     summary = excluded.summary,
+                    key_signal = excluded.key_signal,
                     why_it_matters = excluded.why_it_matters,
                     who_should_care = excluded.who_should_care,
                     topic_tags = excluded.topic_tags,
@@ -63,7 +78,9 @@ class PublishedStore:
                 (
                     card.canonical_event_id,
                     card.title,
+                    card.event_type,
                     card.summary,
+                    card.key_signal,
                     card.why_it_matters,
                     card.who_should_care,
                     json.dumps(card.topic_tags, ensure_ascii=False),
@@ -87,7 +104,9 @@ class PublishedStore:
             NewsCard(
                 canonical_event_id=row["canonical_event_id"],
                 title=row["title"],
+                event_type=row["event_type"] or "趋势信号",
                 summary=row["summary"],
+                key_signal=row["key_signal"],
                 why_it_matters=row["why_it_matters"],
                 who_should_care=row["who_should_care"],
                 topic_tags=json.loads(row["topic_tags"]),
