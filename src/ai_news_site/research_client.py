@@ -21,20 +21,28 @@ _SOURCE_NAMES = (
 
 def run_last30days(last30days_root: Path, candidate: CandidateEvent) -> list[ResearchFinding]:
     script = Path(last30days_root) / "scripts" / "last30days.py"
-    result = subprocess.run(
-        [
-            sys.executable,
-            str(script),
-            candidate.query,
-            "--emit=json",
-            "--quick",
-            "--days=7",
-        ],
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        check=True,
-    )
+    command = [
+        sys.executable,
+        str(script),
+        candidate.query,
+        "--emit=json",
+        "--quick",
+        "--days=7",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = (exc.stderr or "").strip()
+        details = stderr.splitlines()[-1] if stderr else str(exc)
+        raise RuntimeError(
+            f"last30days_failed event_id={candidate.event_id} query={candidate.query} details={details}"
+        ) from exc
 
     payload = json.loads(result.stdout or "{}")
     findings: list[ResearchFinding] = []

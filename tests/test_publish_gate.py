@@ -1,5 +1,7 @@
 import json
+import subprocess
 from pathlib import Path
+import pytest
 
 from ai_news_site.models import CandidateEvent, ResearchFinding
 from ai_news_site.research_client import run_last30days
@@ -129,3 +131,29 @@ def test_run_last30days_requests_utf8_decoding(monkeypatch, tmp_path: Path):
 
     assert seen["text"] is True
     assert seen["encoding"] == "utf-8"
+
+
+def test_run_last30days_surfaces_subprocess_stderr(monkeypatch, tmp_path: Path):
+    candidate = CandidateEvent(
+        event_id="figure-robotics",
+        query="Figure robotics",
+        title="Figure robotics",
+        source="watchlist",
+        occurred_at="2026-03-30T10:00:00Z",
+        tags=["Robotics"],
+    )
+
+    def fake_run(*args, **kwargs):
+        raise subprocess.CalledProcessError(
+            returncode=1,
+            cmd=kwargs.get("args", ["python"]),
+            stderr="Traceback: upstream failed hard",
+        )
+
+    monkeypatch.setattr("ai_news_site.research_client.subprocess.run", fake_run)
+
+    with pytest.raises(RuntimeError, match="figure-robotics"):
+        run_last30days(tmp_path, candidate)
+
+    with pytest.raises(RuntimeError, match="upstream failed hard"):
+        run_last30days(tmp_path, candidate)

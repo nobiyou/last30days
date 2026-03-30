@@ -146,6 +146,49 @@ def test_publish_once_skips_failed_candidate_and_continues(monkeypatch, tmp_path
     assert "research failed" in captured.err
 
 
+def test_publish_once_logs_skip_reason_for_filtered_candidate(monkeypatch, tmp_path: Path, capsys):
+    config = SiteConfig(
+        site_name="Signal Radar",
+        base_url="https://example.com",
+        output_dir=tmp_path / "dist",
+        state_db_path=tmp_path / "published.db",
+        last30days_root=tmp_path / "last30days",
+        watchlist_path=tmp_path / "topics.json",
+        max_cards_per_run=3,
+    )
+    skipped = CandidateEvent(
+        "openmanus-discussion",
+        "OpenManus discussion",
+        "OpenManus discussion",
+        "watchlist",
+        "2026-03-30T10:00:00Z",
+        ["Agents"],
+    )
+
+    monkeypatch.setattr("ai_news_site.pipeline.discover_candidates", lambda cfg: [skipped])
+    monkeypatch.setattr(
+        "ai_news_site.pipeline.research_candidate",
+        lambda cfg, candidate: [
+            ResearchFinding(
+                source="reddit",
+                title=candidate.title,
+                url="https://example.com/openmanus",
+                score=40,
+                published_at="2026-03-30T10:06:00Z",
+                summary="Low signal discussion",
+            )
+        ],
+    )
+
+    result = pipeline.publish_once(config)
+    captured = capsys.readouterr()
+
+    assert result["published_count"] == 0
+    assert "candidate_skipped" in captured.err
+    assert "openmanus-discussion" in captured.err
+    assert "insufficient_signal" in captured.err
+
+
 def test_cli_publish_once_invokes_pipeline(monkeypatch):
     calls = []
 

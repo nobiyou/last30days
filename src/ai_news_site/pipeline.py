@@ -84,12 +84,30 @@ def publish_once(config: SiteConfig) -> dict:
         try:
             findings = _coerce_findings(research_candidate(config, candidate))
             decision = should_publish(candidate, findings)
-            if not decision.publish or store.has_card(candidate.event_id):
+            if not decision.publish:
+                sources = sorted({finding.source for finding in findings if finding.url})
+                max_score = max((finding.score for finding in findings), default=0)
+                _log_pipeline(
+                    "candidate_skipped "
+                    f"event_id={candidate.event_id} "
+                    f"reason={decision.reason} "
+                    f"findings={len(findings)} "
+                    f"sources={','.join(sources) or 'none'} "
+                    f"max_score={max_score}"
+                )
+                continue
+
+            if store.has_card(candidate.event_id):
+                _log_pipeline(f"candidate_duplicate event_id={candidate.event_id}")
                 continue
 
             card = build_card(candidate, findings, datetime.now(timezone.utc).isoformat())
             store.upsert_card(card)
             published_count += 1
+            _log_pipeline(
+                f"candidate_published event_id={candidate.event_id} "
+                f"topic_tags={','.join(card.topic_tags)} confidence={card.confidence_score}"
+            )
         except Exception as exc:
             _log_pipeline(f"candidate_failed event_id={candidate.event_id} error={exc}")
             continue
