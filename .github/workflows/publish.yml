@@ -12,7 +12,7 @@ jobs:
       contents: write
     env:
       AI_NEWS_SITE_NAME: Signal Radar
-      AI_NEWS_BASE_URL: https://example.github.io/ai-news-site
+      AI_NEWS_BASE_URL: https://nobiyou.github.io/last30days
       AI_NEWS_OUTPUT_DIR: dist
       AI_NEWS_STATE_DB: site_state/published.db
       AI_NEWS_WATCHLIST_PATH: config/watchlists/topics.json
